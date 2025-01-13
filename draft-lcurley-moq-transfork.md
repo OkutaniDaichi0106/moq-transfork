@@ -1,4 +1,3 @@
-
 ---
 title: "Media over QUIC - Transfork"
 abbrev: "moqtf"
