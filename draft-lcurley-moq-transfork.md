@@ -533,8 +533,8 @@ A value of 0 signifies that no more groups are not sent.
 
 **Group Error Code**:
 An error code indicated by the application.
-- Cancel Send (Code: 0x00): indicates the publisher cancels data streams in the range.
-- Cancel Receive (Code: 0x01): indicates the subscriber cancels data streams in the range.
+- Internal Error (Code: 0x00): indicates the publisher cancels data streams in the range for some reason.
+- Send Interrupted (Code: 0x01): indicates the subscriber cancels data streams in the range.
 - Invalid Range (Code: 0x02): indicates the publisher does not served any groups in the range.
 - Group Expired (Code: 0x03): indicates the groups was expired.
 - Delivery Timeout (Code: 0x04): indicates that the publisher was not able to deliver groups within the delivery timeout.
