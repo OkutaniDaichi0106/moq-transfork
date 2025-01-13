@@ -411,7 +411,7 @@ ANNOUNCE Message {
   [
     Track Suffix (b),
   ],
-  Announce Parameters (Parameters)
+  Announce Parameters (Parameters),
 }
 ~~~
 
@@ -434,14 +434,14 @@ SUBSCRIBE is sent by a subscriber to start a subscription.
 
 ~~~
 SUBSCRIBE Message {
-  Subscribe ID (i)
-  Track Path Parts (i)
-  [ Track Path Part (b) ]
-  Track Priority (i)
-  Group Order (i)
-  Group Expires (i)
-  Group Min (i)
-  Group Max (i)
+  Subscribe ID (i),
+  Track Path Parts (i),
+  [ Track Path Part (b), ]
+  Track Priority (i),
+  Group Order (i),
+  Group Expires (i),
+  Group Min (i),
+  Group Max (i),
 }
 ~~~
 
@@ -517,23 +517,27 @@ A publisher transmits a SUBSCRIBE_GAP message when it is unable to serve a group
 
 ~~~
 SUBSCRIBE_GAP {
-  Finished Group Sequence (i)
-  Dropped Group Count (i)
-  Group Error Code (i)
+  Group Min (i),
+  Group Max (i),
+  Group Error Code (i),
 }
 ~~~
 
-**Finished Group Sequence**:
-The highest sequence number of any fully delivered group prior to the dropped range.
-The sequence number increments upon successful completion of group delivery.
-A value of 0 signifies that no groups have not fully delivered yet.
+**Group Min**:
+The minimum sequence number of the dropped range.
+A value of 0 signifies that the publisher do not know where the gap starts.
 
-**Dropped Group Count**:
-the number of groups dropped after the Finished Group Sequence.
-A value of 0 signifies that no groups were dropped after the most recently finished group.
+**Group Max**:
+The maximum sequence number of the dropped range.
+A value of 0 signifies that no more groups are not sent.
 
-**Error Code**:
+**Group Error Code**:
 An error code indicated by the application.
+- Cancel Send (Code: 0x00): indicates the publisher cancels data streams in the range.
+- Cancel Receive (Code: 0x01): indicates the subscriber cancels data streams in the range.
+- Invalid Range (Code: 0x02): indicates the publisher does not served any groups in the range.
+- Group Expired (Code: 0x03): indicates the groups was expired.
+- Delivery Timeout (Code: 0x04): indicates that the publisher was not able to deliver groups within the delivery timeout.
 
 ## INFO
 The INFO message contains the current information about a track.
