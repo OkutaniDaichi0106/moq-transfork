@@ -1,3 +1,4 @@
+
 ---
 title: "Media over QUIC - Transfork"
 abbrev: "moqtf"
@@ -231,6 +232,11 @@ The application is responsible for the encoding of the prefix, taking case to av
 
 There MAY be multiple Announce Streams, potentially containing overlapping prefixes, that get their own copy of each ANNOUNCE.
 
+#### Parameters
+- **NEW_SESSION_URI Parameter**
+The Parameter Type ID is 0x10.
+This Parameter MAY only appear when the Annonce Status is `live` and MUST NOT appears when the Announce Status is any other value.
+
 ### Subscribe
 A subscriber can open a Subscribe Stream to request a Track.
 
@@ -263,7 +269,6 @@ The subscriber MUST start the stream with a INFO_PLEASE message.
 The publisher MUST reply with an INFO message or reset the stream.
 Both endpoints MUST close the stream afterwards.
 
-
 ## Unidirectional Streams
 Unidirectional streams are used for data transmission.
 
@@ -287,6 +292,42 @@ A future version of this draft may utilize reliable reset instead.
 # Encoding
 This section covers the encoding of each message.
 
+## Parameters
+~~~
+Parameters {
+  Parameters Count (i)
+  [
+    Parameter Type ID (i)
+    Parameter Payload (b)
+  ]...
+}
+~~~
+
+**Parameters Count**
+The number of the parameters
+
+**Parameter Type ID**
+The ID of the parameter type.
+The reserved parameter type ID is described below.
+|------|----------------------|----------------------------|
+| ID   |  Type                | Messages                   |
+|-----:|:---------------------|----------------------------|
+| 0x1  | Path                 | SESSION_CLIENT             |
+|------|----------------------|----------------------------|
+| 0x2  | Authorization Info   | ANNOUNCE, SUBSCRIBE, FETCH |
+|------|----------------------|----------------------------|
+| 0x3  | Max Delivery Timeout | SUBSCRIBE                  |
+|------|----------------------|----------------------------|
+| 0x5  | New Session URI      | ANNOUNCE                   |
+|------|----------------------|----------------------------|
+
+**Parameter Payload**
+The encoded value of the parameter.
+Parameter paylod encoding rules:
+- Byte array or string: encoded as (b).
+- Number: encoded as (i).
+- Boolean: encoded 1 for true 0 for false.
+
 ## STREAM_TYPE
 All streams start with a short header indiciating the stream type.
 
@@ -306,26 +347,25 @@ The client initiates the session by sending a SESSION_CLIENT message.
 SESSION_CLIENT Message {
   Supported Versions Count (i)
   Supported Version (i)
-  Extension Count (i)
-  [
-    Extension ID (i)
-    Extension Payload (b)
-  ]...
+  Session Client Parameters (Parameters)
 }
 ~~~
 
+**Supported Versions Count**
+The number of the versions supported by the client.
+
+**Supported Version**
+The version numbers supported by the client.
+
+**Setup Extension**
 
 ## SESSION_SERVER
 The server responds with the selected version and any extensions.
 
-~~~go
+~~~
 SESSION_SERVER Message {
   Selected Version (i)
-  Extension Count (i)
-  [
-    Extension ID (i)
-    Extension Payload (b)
-  ]...
+  Session Server Parameters (Parameters)
 }
 ~~~
 
@@ -348,8 +388,7 @@ A subscriber sends an ANNOUNCE_PLEASE message to indicate it wants any coorespon
 
 ~~~
 ANNOUNCE_PLEASE Message {
-  Track Prefix Parts (i),
-  [ Track Prefix Part (b) ]
+  Track Prefix (b),
 }
 ~~~
 
@@ -370,9 +409,9 @@ Only the suffix is encoded on the wire, the full path is constructed by prependi
 ANNOUNCE Message {
   Announce Status (i),
   [
-    Track Suffix Parts (i),
-    [ Track Suffix Part (b), ]
+    Track Suffix (b),
   ],
+  Announce Parameters (Parameters)
 }
 ~~~
 
@@ -387,6 +426,8 @@ A flag indicating the announce status.
 The track path suffix.
 This field is not present for status `live`, which is not elegant I know.
 
+**Announce Parameters**
+The optional parameters in the ANNOUNCE message.
 
 ## SUBSCRIBE
 SUBSCRIBE is sent by a subscriber to start a subscription.
@@ -476,23 +517,23 @@ A publisher transmits a SUBSCRIBE_GAP message when it is unable to serve a group
 
 ~~~
 SUBSCRIBE_GAP {
-  Group Start (i)
-  Group Count (i)
+  Finished Group Sequence (i)
+  Dropped Group Count (i)
   Group Error Code (i)
 }
 ~~~
 
+**Finished Group Sequence**:
+The highest sequence number of any fully delivered group prior to the dropped range.
+The sequence number increments upon successful completion of group delivery.
+A value of 0 signifies that no groups have not fully delivered yet.
 
-**Group Start**:
-The sequence number for the first group within the dropped range.
-
-**Group Count**:
-The number of additional groups after the first.
-This value is 0 when only one group is dropped.
+**Dropped Group Count**:
+the number of groups dropped after the Finished Group Sequence.
+A value of 0 signifies that no groups were dropped after the most recently finished group.
 
 **Error Code**:
 An error code indicated by the application.
-
 
 ## INFO
 The INFO message contains the current information about a track.
@@ -581,6 +622,7 @@ The GROUP message contains information about a Group, as well as a reference to 
 GROUP Message {
   Subscribe ID (i)
   Group Sequence (i)
+  Group Priority (i)
 }
 ~~~
 
@@ -591,6 +633,8 @@ This ID is used to distinguish between multiple subscriptions for the same track
 **Group Sequence**:
 The sequence number of the group.
 
+**Group Priority**:
+The Priority of the group.
 
 ## FRAME
 The FRAME message is a payload at a specific point of time.
@@ -605,10 +649,14 @@ FRAME Message {
 An application specific payload.
 A generic library or relay MUST NOT inspect or modify the contents unless otherwise negotiated.
 
-
-
 # Appendix: Changelog
 Notable changes between versions of this draft.
+
+## This fork
+- Added Group Priority to GROUP message
+- Added New Session URI Paramerter to ANNOUNCE message
+- Migrated New Session URI signaling from MOQTransport's Goaway mechanism to Announce mechanism.
+- Added DELIVERY_TIMEOUT parameter
 
 ## moq-transfork-03
 - Broadcast and Track have been merged.
@@ -654,14 +702,14 @@ The publisher provides a default value to resolve conflicts when deduplicating.
 ### Control Streams
 Transactions like Announce and Subscribe use their own control stream, inheriting the stream state machine for error handling.
 
-This replaces excessive message types in MoqTransport:
-- Removed ANNOUNCE_ERROR
-- Removed ANNOUNCE_DONE
-- Removed UNANNOUNCE
-- Removed SUBSCRIBE_OK
-- Removed SUBSCRIBE_ERROR
-- Removed SUBSCRIBE_DONE
-- Removed UNSUBSCRIBE
+This replaces excessive message types in MoqTransport:  
+- Removed ANNOUNCE_ERROR  
+- Removed ANNOUNCE_DONE  
+- Removed UNANNOUNCE  
+- Removed SUBSCRIBE_OK  
+- Removed SUBSCRIBE_ERROR  
+- Removed SUBSCRIBE_DONE  
+- Removed UNSUBSCRIBE  
 
 ### Unambiguous Delivery
 With MoqTransfork, the subscriber knows if a group/frame will be delivered or was dropped.
@@ -680,6 +728,8 @@ Added a mechanism to request information about the current track state.
 - Added INFO_PLEASE and INFO
 - Replaced SUBSCRIBE_OK with INFO
 
+### Parameters
+- Replaced MAX_CACHE_DURATION parameter with Group Expires field.
 
 # Appendix: Media Use-Cases
 These are some recommended ways to use MoqTransfork for media delivery.
