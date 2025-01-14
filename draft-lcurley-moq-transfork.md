@@ -248,8 +248,6 @@ The publisher MUST transmit a complete Group Stream or a SUBSCRIBE_GAP message f
 This means the publisher MUST transmit a SUBSCRIBE_GAP if a Group Stream is reset.
 The subscriber SHOULD close the subscription when all GROUP and SUBSCRIBE_GAP messages have been received, and the publisher MAY close the subscription after all messages have been acknowledged.
 
-
-
 ### Fetch
 A subscriber can open a Fetch Stream to receive a single Group at a specified offset.
 This is primarily used to recover from an abrupt stream termination, causing the truncation of a Group.
@@ -259,7 +257,6 @@ The publisher MUST reply with the contents of a Group Stream, except starting at
 Note that this includes any FRAME messages.
 
 The fetch is active until both endpoints close the stream, or either endpoint resets the stream.
-
 
 ### Info
 A subscriber can open an Info Stream to request information about a track.
@@ -308,18 +305,18 @@ The number of the parameters
 
 **Parameter Type ID**
 The ID of the parameter type.
-The reserved parameter type ID is described below.
-|------|----------------------|----------------------------|
-| ID   |  Type                | Messages                   |
-|-----:|:---------------------|----------------------------|
-| 0x1  | Path                 | SESSION_CLIENT             |
-|------|----------------------|----------------------------|
-| 0x2  | Authorization Info   | ANNOUNCE, SUBSCRIBE, FETCH |
-|------|----------------------|----------------------------|
-| 0x3  | Max Delivery Timeout | SUBSCRIBE                  |
-|------|----------------------|----------------------------|
-| 0x5  | New Session URI      | ANNOUNCE                   |
-|------|----------------------|----------------------------|
+The reserved parameter type ID is described below.  
+|------|----------------------|------------|
+| ID   | Parameter Type       | Value Type |
+|-----:|:---------------------|------------|
+| 0x1  | Path                 | (b)        |
+|------|----------------------|------------|
+| 0x2  | Authorization Info   | (b)        |
+|------|----------------------|------------|
+| 0x3  | Delivery Timeout     | (i)        |
+|------|----------------------|------------|
+| 0x5  | New Session URI      | (b)        |
+|------|----------------------|------------|
 
 **Parameter Payload**
 The encoded value of the parameter.
@@ -328,7 +325,31 @@ Parameter paylod encoding rules:
 - Number: encoded as (i).
 - Boolean: encoded 1 for true 0 for false.
 
-## STREAM_TYPE
+### Session Client Parameters
+- Path
+
+### Session Server Parameters
+
+
+### Announce Parameters
+- Authorization Info  
+- New Sesson URI  
+- Delivery Timeout
+
+### Subscribe Parameters
+- Authorization Info  
+- Delivery Timeout  
+
+### Fetch Parameters
+- Authorization Info
+- Delivery Timeout
+
+### Info
+- Delivery Timeout
+
+## Messages
+
+### STREAM_TYPE
 All streams start with a short header indiciating the stream type.
 
 ~~~
@@ -340,7 +361,7 @@ STREAM_TYPE {
 The stream ID depends on if it's a bidirectional or unidirectional stream, as indicated in the Streams section.
 A reciever MUST close the session if it receives an unknown stream type.
 
-## SESSION_CLIENT
+### SESSION_CLIENT
 The client initiates the session by sending a SESSION_CLIENT message.
 
 ~~~
@@ -369,7 +390,7 @@ SESSION_SERVER Message {
 }
 ~~~
 
-## SESSION_UPDATE
+### SESSION_UPDATE
 
 ~~~
 SESSION_UPDATE Message {
@@ -383,7 +404,7 @@ This SHOULD be sourced directly from the QUIC congestion controller.
 A value of 0 indicates that this information is not available.
 
 
-## ANNOUNCE_PLEASE
+### ANNOUNCE_PLEASE
 A subscriber sends an ANNOUNCE_PLEASE message to indicate it wants any cooresponding ANNOUNCE messages.
 
 ~~~
@@ -401,7 +422,7 @@ Otherwise, the publisher SHOULD respond with an ANNOUNCE message for any matchin
 
 
 
-## ANNOUNCE
+### ANNOUNCE
 A publisher sends an ANNOUNCE message to advertise a track.
 Only the suffix is encoded on the wire, the full path is constructed by prepending the prefix from the cooresponding ANNOUNCE_INTEREST.
 
@@ -429,7 +450,7 @@ This field is not present for status `live`, which is not elegant I know.
 **Announce Parameters**
 The optional parameters in the ANNOUNCE message.
 
-## SUBSCRIBE
+### SUBSCRIBE
 SUBSCRIBE is sent by a subscriber to start a subscription.
 
 ~~~
@@ -479,7 +500,7 @@ The maximum group sequence number plus 1.
 A value of 0 indicates there is no maximum and the subscription continues indefinitely.
 
 
-## SUBSCRIBE_UPDATE
+### SUBSCRIBE_UPDATE
 A subscriber can modify a subscription with a SUBSCRIBE_UPDATE message.
 
 ~~~
@@ -502,17 +523,14 @@ The publisher SHOULD use the new order for any blocked streams.
 
 **Group Min**:
 The new minimum group sequence, or 0 if there is no update.
-This value MUST NOT be smaller than prior SUBSCRIBE and SUBSCRIBE_UPDATE messages.
 
 **Group Max**:
 The new maximum group sequence, or 0 if there is no update.
-This value MUST NOT be larger than prior SUBSCRIBE or SUBSCRIBE_UPDATE messages.
-
 
 If the Min and Max are updated, the publisher SHOULD reset any blocked streams that are outside the new range.
 
 
-## SUBSCRIBE_GAP
+### SUBSCRIBE_GAP
 A publisher transmits a SUBSCRIBE_GAP message when it is unable to serve a group for a SUBSCRIBE.
 
 ~~~
@@ -539,7 +557,7 @@ An error code indicated by the application.
 - Group Expired (Code: 0x03): indicates the groups was expired.
 - Delivery Timeout (Code: 0x04): indicates that the publisher was not able to deliver groups within the delivery timeout.
 
-## INFO
+### INFO
 The INFO message contains the current information about a track.
 This is sent in response to a SUBSCRIBE or INFO_PLEASE message.
 
@@ -569,7 +587,7 @@ The group SHOULD be dropped if this duration has elapsed after group has finishe
 The Subscriber's Group Expires value SHOULD be used instead when smaller.
 
 
-## INFO_PLEASE
+### INFO_PLEASE
 The INFO_PLEASE message is used to request an INFO response.
 
 ~~~
@@ -580,7 +598,7 @@ INFO_PLEASE Message {
 ~~~
 
 
-## FETCH
+### FETCH
 A subscriber can request the transmission of a (partial) Group with a FETCH message.
 
 ~~~
@@ -605,7 +623,7 @@ The starting frame number.
 All frames from this point forward are transmitted.
 
 
-## FETCH_UPDATE
+### FETCH_UPDATE
 A subscriber can modify a FETCH request with a FETCH_UPDATE message.
 
 ~~~
@@ -619,7 +637,7 @@ The priority of the group relative to all other FETCH and SUBSCRIBE requests wit
 The publisher should transmit *higher* values first during congestion.
 
 
-## GROUP
+### GROUP
 The GROUP message contains information about a Group, as well as a reference to the subscription being served.
 
 ~~~
@@ -640,7 +658,7 @@ The sequence number of the group.
 **Group Priority**:
 The Priority of the group.
 
-## FRAME
+### FRAME
 The FRAME message is a payload at a specific point of time.
 
 ~~~
