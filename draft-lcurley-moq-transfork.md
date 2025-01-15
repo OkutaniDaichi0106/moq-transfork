@@ -17,6 +17,8 @@ author:
     organization: Discord
     email: kixelated@gmail.com
 
+ -  fullname: Okutani Daichi
+
 normative:
   moqt: I-D.ietf-moq-transport
 
