@@ -364,13 +364,13 @@ SESSION_CLIENT Message {
 }
 ~~~
 
-**Supported Versions Count**
+**Supported Versions Count**:
 The number of the versions supported by the client.
 
-**Supported Version**
+**Supported Version**:
 The version numbers supported by the client.
 
-**Setup Extension**
+**Setup Extension**:
 Extention.
 
 ## SESSION_SERVER
@@ -395,7 +395,7 @@ SESSION_UPDATE Message {
 **Session Bitrate**:
 The estimated bitrate of the QUIC connection in bits per second.
 This SHOULD be sourced directly from the QUIC congestion controller.
-A value of 0 indicates that this information is not available.
+A value of 0 indicates that the session will be terminated soon by the sender. The receiver MUST NOT send a new message to the session and the sender MUST ignore any new messages.
 
 ### ANNOUNCE_PLEASE
 
@@ -529,17 +529,17 @@ A publisher transmits a SUBSCRIBE_GAP message when it is unable to serve a group
 
 ~~~text
 SUBSCRIBE_GAP {
-  Group Min (i),
-  Group Max (i),
+  Gap Min (i),
+  Gap Max (i),
   Group Error Code (i),
 }
 ~~~
 
-**Group Min**:
+**Gap Min**:
 The minimum sequence number of the dropped range.
 A value of 0 signifies that the publisher do not know where the gap starts.
 
-**Group Max**:
+**Gap Max**:
 The maximum sequence number of the dropped range.
 A value of 0 signifies that no more groups are not sent.
 
@@ -674,10 +674,20 @@ Notable changes between versions of this draft.
 
 ## This fork
 
+### Changes from moq-transfork
+
 - Added Group Priority to GROUP message
 - Added New Session URI Paramerter to ANNOUNCE message
-- Migrated New Session URI signaling from MOQTransport's Goaway mechanism to Announce mechanism.
 - Added DELIVERY_TIMEOUT parameter
+- Renamed Group Start to Gap Min
+- Changed Group Count to Gap Max
+
+### Changes from moq-transport
+
+- Replaced MAX_CACHE_DURATION parameter with the Group Expires field.
+- Removed the GOAWAY message.
+- SESSION_UPDATE message is used to signal termination instead of the GOAWAY message.
+- New Session URI is communicated as a parameter in ANNOUNCE message instead of a field in GOAWAY message .
 
 ## moq-transfork-03
 
@@ -760,10 +770,6 @@ Added a mechanism to request information about the current track state.
 
 - Added INFO_PLEASE and INFO
 - Replaced SUBSCRIBE_OK with INFO
-
-### Parameters in MOQTransport
-
-- Replaced MAX_CACHE_DURATION parameter with Group Expires field.
 
 # Appendix: Media Use-Cases
 
