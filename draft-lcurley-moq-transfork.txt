@@ -88,23 +88,25 @@ Table of Contents
      5.2.  Unidirectional Streams
        5.2.1.  Group
    6.  Encoding
-     6.1.  Parameters
-     6.2.  Messages
-       6.2.1.  STREAM_TYPE
-       6.2.2.  SESSION_CLIENT
-     6.3.  SESSION_SERVER
-       6.3.1.  SESSION_UPDATE
-       6.3.2.  ANNOUNCE_PLEASE
-       6.3.3.  ANNOUNCE
-       6.3.4.  SUBSCRIBE
-       6.3.5.  SUBSCRIBE_UPDATE
-       6.3.6.  SUBSCRIBE_GAP
-       6.3.7.  INFO
-       6.3.8.  INFO_PLEASE
-       6.3.9.  FETCH
-       6.3.10. FETCH_UPDATE
-       6.3.11. GROUP
-       6.3.12. FRAME
+     6.1.  Numbers
+     6.2.  Bytes
+     6.3.  Parameters
+     6.4.  Messages
+       6.4.1.  STREAM_TYPE
+       6.4.2.  SESSION_CLIENT
+       6.4.3.  SESSION_SERVER
+       6.4.4.  SESSION_UPDATE
+       6.4.5.  ANNOUNCE_PLEASE
+       6.4.6.  ANNOUNCE
+       6.4.7.  SUBSCRIBE
+       6.4.8.  SUBSCRIBE_UPDATE
+       6.4.9.  SUBSCRIBE_GAP
+       6.4.10. INFO
+       6.4.11. INFO_PLEASE
+       6.4.12. FETCH
+       6.4.13. FETCH_UPDATE
+       6.4.14. GROUP
+       6.4.15. FRAME
    7.  Appendix: Changelog
      7.1.  This fork
        7.1.1.  Changes from moq-transfork
@@ -432,7 +434,7 @@ Table of Contents
 
 5.1.2.1.  Announce Parameters
 
-   *  *NEW_SESSION_URI Parameter* The Parameter Type ID is 0x10.  This
+   *  *NEW_SESSION_URI Parameter*: The Parameter Type ID is 0x10.  This
       Parameter MAY only appear when the Annonce Status is live and MUST
       NOT appears when the Announce Status is any other value.
 
@@ -509,7 +511,20 @@ Table of Contents
 
    This section covers the encoding of each message.
 
-6.1.  Parameters
+6.1.  Numbers
+
+   Numbers are encoded to the QUIC variable lenght integer.  In this
+   document, a field with "(i)" indicates that it is a number.
+
+6.2.  Bytes
+
+   Bytes are encoded to length-delimited.  In this document, a field
+   with "(b)" indicates that it is a bytes array such as string.
+
+6.3.  Parameters
+
+   Parameters are encoded to following format.  In this document, a
+   field with "(Parameter)" indicates that it is a parameter.
 
    Parameters {
      Parameters Count (i)
@@ -519,9 +534,9 @@ Table of Contents
      ]...
    }
 
-   *Parameters Count* The number of the parameters
+   *Parameters Count*: The number of the parameters
 
-   *Parameter Type ID* The ID of the parameter type.  The reserved
+   *Parameter Type ID*: The ID of the parameter type.  The reserved
    parameter type ID is described below.
 
                  +=====+====================+============+
@@ -538,18 +553,18 @@ Table of Contents
 
                                   Table 3
 
-   *Parameter Payload* The encoded value of the parameter.  Parameter
+   *Parameter Payload*: The encoded value of the parameter.  Parameter
    paylod encoding rules:
 
-   *  Byte array or string: encoded as (b).
+   *  Byte array or string: encoded in (b).
 
-   *  Number: encoded as (i).
+   *  Number: encoded in (i).
 
-   *  Boolean: encoded 1 for true 0 for false.
+   *  Boolean: encoded 1 in (i) for true, 0 in (i) for false.
 
-6.2.  Messages
+6.4.  Messages
 
-6.2.1.  STREAM_TYPE
+6.4.1.  STREAM_TYPE
 
    All streams start with a short header indiciating the stream type.
 
@@ -561,7 +576,7 @@ Table of Contents
    stream, as indicated in the Streams section.  A reciever MUST close
    the session if it receives an unknown stream type.
 
-6.2.2.  SESSION_CLIENT
+6.4.2.  SESSION_CLIENT
 
    The client initiates the session by sending a SESSION_CLIENT message.
 
@@ -576,9 +591,9 @@ Table of Contents
 
    *Supported Version*: The version numbers supported by the client.
 
-   *Setup Extension*: Extention.
+   *Session Client Parameters*: The optional parameters.
 
-6.3.  SESSION_SERVER
+6.4.3.  SESSION_SERVER
 
    The server responds with the selected version and any extensions.
 
@@ -587,7 +602,7 @@ Table of Contents
      Session Server Parameters (Parameters)
    }
 
-6.3.1.  SESSION_UPDATE
+6.4.4.  SESSION_UPDATE
 
    SESSION_UPDATE Message {
      Session Bitrate (i)
@@ -599,7 +614,7 @@ Table of Contents
    be terminated soon by the sender.  The receiver MUST NOT send a new
    message to the session and the sender MUST ignore any new messages.
 
-6.3.2.  ANNOUNCE_PLEASE
+6.4.5.  ANNOUNCE_PLEASE
 
    A subscriber sends an ANNOUNCE_PLEASE message to indicate it wants
    any cooresponding ANNOUNCE messages.
@@ -615,7 +630,7 @@ Table of Contents
    is too expansive.  Otherwise, the publisher SHOULD respond with an
    ANNOUNCE message for any matching tracks.
 
-6.3.3.  ANNOUNCE
+6.4.6.  ANNOUNCE
 
    A publisher sends an ANNOUNCE message to advertise a track.  Only the
    suffix is encoded on the wire, the full path is constructed by
@@ -640,10 +655,9 @@ Table of Contents
    *Track Suffix*: The track path suffix.  This field is not present for
    status live, which is not elegant I know.
 
-   *Announce Parameters* The optional parameters in the ANNOUNCE
-   message.
+   *Announce Parameters*: The optional parameters.
 
-6.3.4.  SUBSCRIBE
+6.4.7.  SUBSCRIBE
 
    SUBSCRIBE is sent by a subscriber to start a subscription.
 
@@ -690,7 +704,9 @@ Table of Contents
    indicates there is no maximum and the subscription continues
    indefinitely.
 
-6.3.5.  SUBSCRIBE_UPDATE
+   *Fetch Parameters*: The optional parameters.
+
+6.4.8.  SUBSCRIBE_UPDATE
 
    A subscriber can modify a subscription with a SUBSCRIBE_UPDATE
    message.
@@ -701,6 +717,7 @@ Table of Contents
      Group Expires (i)
      Group Min (i)
      Group Max (i)
+     Subscribe Update Parameters (Parameters)
    }
 
    *Track Priority*: The new track priority; see SUBSCRIBE.  The
@@ -715,10 +732,12 @@ Table of Contents
    *Group Max*: The new maximum group sequence, or 0 if there is no
    update.
 
+   *Subscribe Update Parameters*: The optional parameters.
+
    If the Min and Max are updated, the publisher SHOULD reset any
    blocked streams that are outside the new range.
 
-6.3.6.  SUBSCRIBE_GAP
+6.4.9.  SUBSCRIBE_GAP
 
    A publisher transmits a SUBSCRIBE_GAP message when it is unable to
    serve a group for a SUBSCRIBE.
@@ -751,7 +770,7 @@ Table of Contents
    *  Delivery Timeout (Code: 0x04): indicates that the publisher was
       not able to deliver groups within the delivery timeout.
 
-6.3.7.  INFO
+6.4.10.  INFO
 
    The INFO message contains the current information about a track.
    This is sent in response to a SUBSCRIBE or INFO_PLEASE message.
@@ -779,7 +798,7 @@ Table of Contents
    including any time spent cached.  The Subscriber's Group Expires
    value SHOULD be used instead when smaller.
 
-6.3.8.  INFO_PLEASE
+6.4.11.  INFO_PLEASE
 
    The INFO_PLEASE message is used to request an INFO response.
 
@@ -788,7 +807,7 @@ Table of Contents
      [ Track Path Part (b) ]
    }
 
-6.3.9.  FETCH
+6.4.12.  FETCH
 
    A subscriber can request the transmission of a (partial) Group with a
    FETCH message.
@@ -799,6 +818,7 @@ Table of Contents
      Track Priority (i)
      Group Sequence (i)
      Frame Sequence (i)
+     Fetch Parameters (Parameter)
    }
 
    *Track Priority*: The priority of the group relative to all other
@@ -810,7 +830,9 @@ Table of Contents
    *Frame Sequence*: The starting frame number.  All frames from this
    point forward are transmitted.
 
-6.3.10.  FETCH_UPDATE
+   *Fetch Parameters*: The optional parameters.
+
+6.4.13.  FETCH_UPDATE
 
    A subscriber can modify a FETCH request with a FETCH_UPDATE message.
 
@@ -822,7 +844,7 @@ Table of Contents
    FETCH and SUBSCRIBE requests within the session.  The publisher
    should transmit _higher_ values first during congestion.
 
-6.3.11.  GROUP
+6.4.14.  GROUP
 
    The GROUP message contains information about a Group, as well as a
    reference to the subscription being served.
@@ -840,7 +862,7 @@ Table of Contents
 
    *Group Priority*: The Priority of the group.
 
-6.3.12.  FRAME
+6.4.15.  FRAME
 
    The FRAME message is a payload at a specific point of time.
 
@@ -881,7 +903,9 @@ Table of Contents
       the GOAWAY message.
 
    *  New Session URI is communicated as a parameter in ANNOUNCE message
-      instead of a field in GOAWAY message .
+      instead of a field in GOAWAY message.
+
+   *  Relaxed the restrictions on updates for subscription.
 
 7.2.  moq-transfork-03
 
