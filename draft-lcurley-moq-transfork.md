@@ -239,7 +239,7 @@ There MAY be multiple Announce Streams, potentially containing overlapping prefi
 
 #### Announce Parameters
 
-- **NEW_SESSION_URI Parameter**
+- **NEW_SESSION_URI Parameter**:
 The Parameter Type ID is 0x10.
 This Parameter MAY only appear when the Annonce Status is `live` and MUST NOT appears when the Announce Status is any other value.
 
@@ -299,7 +299,20 @@ A future version of this draft may utilize reliable reset instead.
 
 This section covers the encoding of each message.
 
+## Numbers
+
+Numbers are encoded to the QUIC variable lenght integer.
+In this document, a field with "(i)" indicates that it is a number.
+
+## Bytes
+
+Bytes are encoded to length-delimited.
+In this document, a field with "(b)" indicates that it is a bytes array such as string.
+
 ## Parameters
+
+Parameters are encoded to following format.
+In this document, a field with "(Parameter)" indicates that it is a parameter.
 
 ~~~text
 Parameters {
@@ -311,10 +324,10 @@ Parameters {
 }
 ~~~
 
-**Parameters Count**
+**Parameters Count**:
 The number of the parameters
 
-**Parameter Type ID**
+**Parameter Type ID**:
 The ID of the parameter type.
 The reserved parameter type ID is described below.
 
@@ -329,13 +342,13 @@ The reserved parameter type ID is described below.
 | 0x5  | New Session URI      | (b)        |
 |------|----------------------|------------|
 
-**Parameter Payload**
+**Parameter Payload**:
 The encoded value of the parameter.
 Parameter paylod encoding rules:
 
-- Byte array or string: encoded as (b).
-- Number: encoded as (i).
-- Boolean: encoded 1 for true 0 for false.
+- Byte array or string: encoded in (b).
+- Number: encoded in (i).
+- Boolean: encoded 1 in (i) for true, 0 in (i) for false.
 
 ## Messages
 
@@ -370,10 +383,10 @@ The number of the versions supported by the client.
 **Supported Version**:
 The version numbers supported by the client.
 
-**Setup Extension**:
-Extention.
+**Session Client Parameters**:
+The optional parameters.
 
-## SESSION_SERVER
+### SESSION_SERVER
 
 The server responds with the selected version and any extensions.
 
@@ -440,8 +453,8 @@ A flag indicating the announce status.
 The track path suffix.
 This field is not present for status `live`, which is not elegant I know.
 
-**Announce Parameters**
-The optional parameters in the ANNOUNCE message.
+**Announce Parameters**:
+The optional parameters.
 
 ### SUBSCRIBE
 
@@ -493,6 +506,9 @@ A value of 0 indicates the latest Group Sequence as determined by the publisher.
 The maximum group sequence number plus 1.
 A value of 0 indicates there is no maximum and the subscription continues indefinitely.
 
+**Fetch Parameters**:
+The optional parameters.
+
 ### SUBSCRIBE_UPDATE
 
 A subscriber can modify a subscription with a SUBSCRIBE_UPDATE message.
@@ -504,6 +520,7 @@ SUBSCRIBE_UPDATE Message {
   Group Expires (i)
   Group Min (i)
   Group Max (i)
+  Subscribe Update Parameters (Parameters)
 }
 ~~~
 
@@ -520,6 +537,9 @@ The new minimum group sequence, or 0 if there is no update.
 
 **Group Max**:
 The new maximum group sequence, or 0 if there is no update.
+
+**Subscribe Update Parameters**:
+The optional parameters.
 
 If the Min and Max are updated, the publisher SHOULD reset any blocked streams that are outside the new range.
 
@@ -604,6 +624,7 @@ FETCH Message {
   Track Priority (i)
   Group Sequence (i)
   Frame Sequence (i)
+  Fetch Parameters (Parameter)
 }
 ~~~
 
@@ -617,6 +638,9 @@ The sequence number of the group.
 **Frame Sequence**:
 The starting frame number.
 All frames from this point forward are transmitted.
+
+**Fetch Parameters**:
+The optional parameters.
 
 ### FETCH_UPDATE
 
@@ -687,7 +711,8 @@ Notable changes between versions of this draft.
 - Replaced MAX_CACHE_DURATION parameter with the Group Expires field.
 - Removed the GOAWAY message.
 - SESSION_UPDATE message is used to signal termination instead of the GOAWAY message.
-- New Session URI is communicated as a parameter in ANNOUNCE message instead of a field in GOAWAY message .
+- New Session URI is communicated as a parameter in ANNOUNCE message instead of a field in GOAWAY message.
+- Relaxed the restrictions on updates for subscription.
 
 ## moq-transfork-03
 
