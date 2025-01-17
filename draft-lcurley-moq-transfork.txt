@@ -5,7 +5,7 @@
 moq                                                            L. Curley
 Internet-Draft                                                   Discord
 Intended status: Informational                                 O. Daichi
-Expires: 20 July 2025                                    16 January 2025
+Expires: 21 July 2025                                    17 January 2025
 
 
                       Media over QUIC - Transfork
@@ -48,7 +48,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 July 2025.
+   This Internet-Draft will expire on 21 July 2025.
 
 Copyright Notice
 
@@ -107,6 +107,8 @@ Table of Contents
        6.3.12. FRAME
    7.  Appendix: Changelog
      7.1.  This fork
+       7.1.1.  Changes from moq-transfork
+       7.1.2.  Changes from moq-transport
      7.2.  moq-transfork-03
      7.3.  moq-transfork-02
      7.4.  moq-transfork-01
@@ -118,7 +120,6 @@ Table of Contents
        7.5.5.  Unambiguous Delivery
        7.5.6.  Fetch via Offset
        7.5.7.  Track INFO
-       7.5.8.  Parameters in MOQTransport
    8.  Appendix: Media Use-Cases
      8.1.  Video
        8.1.1.  Group of Pictures
@@ -570,12 +571,12 @@ Table of Contents
      Session Client Parameters (Parameters)
    }
 
-   *Supported Versions Count* The number of the versions supported by
+   *Supported Versions Count*: The number of the versions supported by
    the client.
 
-   *Supported Version* The version numbers supported by the client.
+   *Supported Version*: The version numbers supported by the client.
 
-   *Setup Extension* Extention.
+   *Setup Extension*: Extention.
 
 6.3.  SESSION_SERVER
 
@@ -594,8 +595,9 @@ Table of Contents
 
    *Session Bitrate*: The estimated bitrate of the QUIC connection in
    bits per second.  This SHOULD be sourced directly from the QUIC
-   congestion controller.  A value of 0 indicates that this information
-   is not available.
+   congestion controller.  A value of 0 indicates that the session will
+   be terminated soon by the sender.  The receiver MUST NOT send a new
+   message to the session and the sender MUST ignore any new messages.
 
 6.3.2.  ANNOUNCE_PLEASE
 
@@ -722,17 +724,16 @@ Table of Contents
    serve a group for a SUBSCRIBE.
 
    SUBSCRIBE_GAP {
-     Group Min (i),
-     Group Max (i),
+     Gap Min (i),
+     Gap Max (i),
      Group Error Code (i),
    }
 
-   *Group Min*: The minimum sequence number of the dropped range.  A
-   value of 0 signifies that the publisher do not know where the gap
-   starts.
+   *Gap Min*: The minimum sequence number of the dropped range.  A value
+   of 0 signifies that the publisher do not know where the gap starts.
 
-   *Group Max*: The maximum sequence number of the dropped range.  A
-   value of 0 signifies that no more groups are not sent.
+   *Gap Max*: The maximum sequence number of the dropped range.  A value
+   of 0 signifies that no more groups are not sent.
 
    *Group Error Code*: An error code indicated by the application.
 
@@ -857,14 +858,30 @@ Table of Contents
 
 7.1.  This fork
 
+7.1.1.  Changes from moq-transfork
+
    *  Added Group Priority to GROUP message
 
    *  Added New Session URI Paramerter to ANNOUNCE message
 
-   *  Migrated New Session URI signaling from MOQTransport's Goaway
-      mechanism to Announce mechanism.
-
    *  Added DELIVERY_TIMEOUT parameter
+
+   *  Renamed Group Start to Gap Min
+
+   *  Changed Group Count to Gap Max
+
+7.1.2.  Changes from moq-transport
+
+   *  Replaced MAX_CACHE_DURATION parameter with the Group Expires
+      field.
+
+   *  Removed the GOAWAY message.
+
+   *  SESSION_UPDATE message is used to signal termination instead of
+      the GOAWAY message.
+
+   *  New Session URI is communicated as a parameter in ANNOUNCE message
+      instead of a field in GOAWAY message .
 
 7.2.  moq-transfork-03
 
@@ -979,10 +996,6 @@ Table of Contents
    *  Added INFO_PLEASE and INFO
 
    *  Replaced SUBSCRIBE_OK with INFO
-
-7.5.8.  Parameters in MOQTransport
-
-   *  Replaced MAX_CACHE_DURATION parameter with Group Expires field.
 
 8.  Appendix: Media Use-Cases
 
