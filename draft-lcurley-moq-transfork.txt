@@ -4,8 +4,8 @@
 
 moq                                                            L. Curley
 Internet-Draft                                                   Discord
-Intended status: Informational                           18 January 2025
-Expires: 22 July 2025
+Intended status: Informational                                 O. Daichi
+Expires: 22 July 2025                                    18 January 2025
 
 
                       Media over QUIC - Transfork
@@ -31,7 +31,7 @@ Discussion Venues
    https://mailarchive.ietf.org/arch/browse/moq/.
 
    Source for this draft and an issue tracker can be found at
-   https://github.com/kixelated/moq-drafts.
+   https://github.com/OkutaniDaichi0106/moq-transfork.
 
 Status of This Memo
 
@@ -82,38 +82,46 @@ Table of Contents
      5.1.  Bidirectional Streams
        5.1.1.  Session
        5.1.2.  Announce
-     5.2.  Subscribe
-     5.3.  Fetch
-     5.4.  Info
-     5.5.  Unidirectional Streams
-       5.5.1.  Group
+       5.1.3.  Subscribe
+       5.1.4.  Fetch
+       5.1.5.  Info
+     5.2.  Unidirectional Streams
+       5.2.1.  Group
    6.  Encoding
-     6.1.  STREAM_TYPE
-     6.2.  SESSION_CLIENT
-     6.3.  SESSION_SERVER
-     6.4.  SESSION_UPDATE
+     6.1.  Numbers
+     6.2.  Bytes
+     6.3.  Parameters
+     6.4.  Messages
+       6.4.1.  STREAM_TYPE
+       6.4.2.  SESSION_CLIENT
+       6.4.3.  SESSION_SERVER
+       6.4.4.  SESSION_UPDATE
+       6.4.5.  ANNOUNCE_PLEASE
      6.5.  ANNOUNCE_PLEASE
-     6.6.  ANNOUNCE
-     6.7.  SUBSCRIBE
-     6.8.  SUBSCRIBE_UPDATE
-     6.9.  SUBSCRIBE_GAP
-     6.10. INFO
-     6.11. INFO_PLEASE
-     6.12. FETCH
-     6.13. FETCH_UPDATE
-     6.14. GROUP
-     6.15. FRAME
+       6.5.1.  ANNOUNCE
+       6.5.2.  SUBSCRIBE
+       6.5.3.  SUBSCRIBE_UPDATE
+       6.5.4.  SUBSCRIBE_GAP
+       6.5.5.  INFO
+       6.5.6.  INFO_PLEASE
+       6.5.7.  FETCH
+       6.5.8.  FETCH_UPDATE
+       6.5.9.  GROUP
+       6.5.10. FRAME
    7.  Appendix: Changelog
-     7.1.  moq-transfork-04
-     7.2.  moq-transfork-03
-     7.3.  moq-transfork-02
-     7.4.  moq-transfork-01
-     7.5.  moq-transfork-00
+     7.1.  This fork
+       7.1.1.  Changes from moq-transfork
+       7.1.2.  Changes from moq-transport
+     7.2.  moq-transfork-04
+     7.3.  moq-transfork-03
+     7.4.  moq-transfork-02
+     7.5.  moq-transfork-01
+     7.6.  moq-transfork-00
    8.  Security Considerations
    9.  IANA Considerations
    10. Normative References
    Acknowledgments
-   Author's Address
+   Authors' Addresses
 
 1.  Conventions and Definitions
 
@@ -286,9 +294,12 @@ Table of Contents
    subscriptions and announcements.  These are terminated when the
    underlying QUIC stream is terminated.
 
-   To terminate a stream, an endpoint may: - close the send direction
-   (STREAM with FIN) to gracefully terminate (all messages are flushed).
-   - reset the send direction (RESET_STREAM) to immediately terminate.
+   To terminate a stream, an endpoint may:
+
+   *  close the send direction (STREAM with FIN) to gracefully terminate
+      (all messages are flushed).
+
+   *  reset the send direction (RESET_STREAM) to immediately terminate.
 
    After resetting the send direction, an endpoint MAY close the recv
    direction (STOP_SENDING).  However, it is ultimately the other peer's
@@ -308,7 +319,7 @@ Table of Contents
 
    MoqTransfork involves many concurrent streams.
 
-   Each transactional action, such as a SUBSCRIBE, is sent over it's own
+   Each transactional action, such as a SUBSCRIBE, is sent over its own
    stream.  If the stream is closed, potentially with an error, the
    transaction is terminated.
 
@@ -390,7 +401,13 @@ Table of Contents
    There MAY be multiple Announce Streams, potentially containing
    overlapping prefixes, that get their own copy of each ANNOUNCE.
 
-5.2.  Subscribe
+5.1.2.1.  Announce Parameters
+
+   *  *NEW_SESSION_URI Parameter*: The Parameter Type ID is 0x10.  This
+      Parameter MAY only appear when the Annonce Status is live and MUST
+      NOT appears when the Announce Status is any other value.
+
+5.1.3.  Subscribe
 
    A subscriber can open a Subscribe Stream to request a Track.
 
@@ -408,7 +425,7 @@ Table of Contents
    publisher MAY close the subscription after all messages have been
    acknowledged.
 
-5.3.  Fetch
+5.1.4.  Fetch
 
    A subscriber can open a Fetch Stream to receive a single Group at a
    specified offset.  This is primarily used to recover from an abrupt
@@ -423,7 +440,7 @@ Table of Contents
    The fetch is active until both endpoints close the stream, or either
    endpoint resets the stream.
 
-5.4.  Info
+5.1.5.  Info
 
    A subscriber can open an Info Stream to request information about a
    track.  This is not often necessary as SUBSCRIBE will trigger an INFO
@@ -433,7 +450,7 @@ Table of Contents
    publisher MUST reply with an INFO message or reset the stream.  Both
    endpoints MUST close the stream afterwards.
 
-5.5.  Unidirectional Streams
+5.2.  Unidirectional Streams
 
    Unidirectional streams are used for data transmission.
 
@@ -445,7 +462,7 @@ Table of Contents
 
                                  Table 2
 
-5.5.1.  Group
+5.2.1.  Group
 
    A publisher creates Group Streams in response to a Subscribe Stream.
 
@@ -463,9 +480,64 @@ Table of Contents
 
    This section covers the encoding of each message.
 
-6.1.  STREAM_TYPE
+6.1.  Numbers
 
-   All streams start with a short header indicating the stream type.
+   Numbers are encoded to the QUIC variable lenght integer.  In this
+   document, a field with "(i)" indicates that it is a number.
+
+6.2.  Bytes
+
+   Bytes are encoded to length-delimited.  In this document, a field
+   with "(b)" indicates that it is a bytes array such as string.
+
+6.3.  Parameters
+
+   Parameters are encoded to following format.  In this document, a
+   field with "(Parameter)" indicates that it is a parameter.
+
+   Parameters {
+     Parameters Count (i)
+     [
+       Parameter Type ID (i)
+       Parameter Payload (b)
+     ]...
+   }
+
+   *Parameters Count*: The number of the parameters
+
+   *Parameter Type ID*: The ID of the parameter type.  The reserved
+   parameter type ID is described below.
+
+                 +=====+====================+============+
+                 |  ID | Parameter Type     | Value Type |
+                 +=====+====================+============+
+                 | 0x1 | Path               |    (b)     |
+                 +-----+--------------------+------------+
+                 | 0x2 | Authorization Info |    (b)     |
+                 +-----+--------------------+------------+
+                 | 0x3 | Delivery Timeout   |    (i)     |
+                 +-----+--------------------+------------+
+                 | 0x5 | New Session URI    |    (b)     |
+                 +-----+--------------------+------------+
+
+                                  Table 3
+
+   *Parameter Payload*: The encoded value of the parameter.  Parameter
+   paylod encoding rules:
+
+   *  Byte array or string: encoded in (b).
+
+   *  Number: encoded in (i).
+
+   *  Boolean: encoded 1 in (i) for true, 0 in (i) for false.
+
+6.4.  Messages
+
+6.4.1.  STREAM_TYPE
+
+   All streams start with a short header indiciating the stream type. ##
+   STREAM_TYPE All streams start with a short header indicating the
+   stream type.
 
    STREAM_TYPE {
      Stream Type (i)
@@ -475,34 +547,33 @@ Table of Contents
    stream, as indicated in the Streams section.  A reciever MUST close
    the session if it receives an unknown stream type.
 
-6.2.  SESSION_CLIENT
+6.4.2.  SESSION_CLIENT
 
    The client initiates the session by sending a SESSION_CLIENT message.
 
    SESSION_CLIENT Message {
      Supported Versions Count (i)
      Supported Version (i)
-     Extension Count (i)
-     [
-       Extension ID (i)
-       Extension Payload (b)
-     ]...
+     Session Client Parameters (Parameters)
    }
 
-6.3.  SESSION_SERVER
+   *Supported Versions Count*: The number of the versions supported by
+   the client.
+
+   *Supported Version*: The version numbers supported by the client.
+
+   *Session Client Parameters*: The optional parameters.
+
+6.4.3.  SESSION_SERVER
 
    The server responds with the selected version and any extensions.
 
    SESSION_SERVER Message {
      Selected Version (i)
-     Extension Count (i)
-     [
-       Extension ID (i)
-       Extension Payload (b)
-     ]...
+     Session Server Parameters (Parameters)
    }
 
-6.4.  SESSION_UPDATE
+6.4.4.  SESSION_UPDATE
 
    SESSION_UPDATE Message {
      Session Bitrate (i)
@@ -510,8 +581,11 @@ Table of Contents
 
    *Session Bitrate*: The estimated bitrate of the QUIC connection in
    bits per second.  This SHOULD be sourced directly from the QUIC
-   congestion controller.  A value of 0 indicates that this information
-   is not available.
+   congestion controller.  A value of 0 indicates that the session will
+   be terminated soon by the sender.  The receiver MUST NOT send a new
+   message to the session and the sender MUST ignore any new messages.
+
+6.4.5.  ANNOUNCE_PLEASE
 
 6.5.  ANNOUNCE_PLEASE
 
@@ -519,8 +593,7 @@ Table of Contents
    any corresponding ANNOUNCE messages.
 
    ANNOUNCE_PLEASE Message {
-     Track Prefix Parts (i),
-     [ Track Prefix Part (b) ]
+     Track Prefix (b),
    }
 
    *Track Prefix*: Indicate interest for any tracks that start with this
@@ -530,7 +603,7 @@ Table of Contents
    is too expansive.  Otherwise, the publisher SHOULD respond with an
    ANNOUNCE message for any matching tracks.
 
-6.6.  ANNOUNCE
+6.5.1.  ANNOUNCE
 
    A publisher sends an ANNOUNCE message to advertise a track.  Only the
    suffix is encoded on the wire, the full path is constructed by
@@ -539,9 +612,9 @@ Table of Contents
    ANNOUNCE Message {
      Announce Status (i),
      [
-       Track Suffix Parts (i),
-       [ Track Suffix Part (b), ]
+       Track Suffix (b),
      ],
+     Announce Parameters (Parameters),
    }
 
    *Announce Status*: A flag indicating the announce status.
@@ -555,18 +628,20 @@ Table of Contents
    *Track Suffix*: The track path suffix.  This field is not present for
    status live, which is not elegant I know.
 
-6.7.  SUBSCRIBE
+   *Announce Parameters*: The optional parameters.
+
+6.5.2.  SUBSCRIBE
 
    SUBSCRIBE is sent by a subscriber to start a subscription.
 
    SUBSCRIBE Message {
-     Subscribe ID (i)
-     Track Path Parts (i)
-     [ Track Path Part (b) ]
-     Track Priority (i)
-     Group Order (i)
-     Group Min (i)
-     Group Max (i)
+     Subscribe ID (i),
+     Track Path Parts (i),
+     [ Track Path Part (b), ]
+     Track Priority (i),
+     Group Order (i),
+     Group Min (i),
+     Group Max (i),
    }
 
    *Subscribe ID*: A unique idenfier chosen by the subscriber.  A
@@ -595,7 +670,9 @@ Table of Contents
    indicates there is no maximum and the subscription continues
    indefinitely.
 
-6.8.  SUBSCRIBE_UPDATE
+   *Fetch Parameters*: The optional parameters.
+
+6.5.3.  SUBSCRIBE_UPDATE
 
    A subscriber can modify a subscription with a SUBSCRIBE_UPDATE
    message.
@@ -605,6 +682,7 @@ Table of Contents
      Group Order (i)
      Group Min (i)
      Group Max (i)
+     Subscribe Update Parameters (Parameters)
    }
 
    *Track Priority*: The new track priority; see SUBSCRIBE.  The
@@ -614,36 +692,51 @@ Table of Contents
    SHOULD use the new order for any blocked streams.
 
    *Group Min*: The new minimum group sequence, or 0 if there is no
-   update.  This value MUST NOT be smaller than prior SUBSCRIBE and
-   SUBSCRIBE_UPDATE messages.
+   update.
 
    *Group Max*: The new maximum group sequence, or 0 if there is no
-   update.  This value MUST NOT be larger than prior SUBSCRIBE or
-   SUBSCRIBE_UPDATE messages.
+   update.
+
+   *Subscribe Update Parameters*: The optional parameters.
 
    If the Min and Max are updated, the publisher SHOULD reset any
    blocked streams that are outside the new range.
 
-6.9.  SUBSCRIBE_GAP
+6.5.4.  SUBSCRIBE_GAP
 
    A publisher transmits a SUBSCRIBE_GAP message when it is unable to
    serve a group for a SUBSCRIBE.
 
    SUBSCRIBE_GAP {
-     Group Start (i)
-     Group Count (i)
-     Group Error Code (i)
+     Gap Min (i),
+     Gap Max (i),
+     Group Error Code (i),
    }
 
-   *Group Start*: The sequence number for the first group within the
-   dropped range.
+   *Gap Min*: The minimum sequence number of the dropped range.  A value
+   of 0 signifies that the publisher do not know where the gap starts.
 
-   *Group Count*: The number of additional groups after the first.  This
-   value is 0 when only one group is dropped.
+   *Gap Max*: The maximum sequence number of the dropped range.  A value
+   of 0 signifies that no more groups are not sent.
 
-   *Error Code*: An error code indicated by the application.
+   *Group Error Code*: An error code indicated by the application.
 
-6.10.  INFO
+   *  Internal Error (Code: 0x00): indicates the publisher cancels data
+      streams in the range for some reason.
+
+   *  Send Interrupted (Code: 0x01): indicates the subscriber cancels
+      data streams in the range.
+
+   *  Out of Range (Code: 0x02): indicates the publisher does not served
+      any groups in the range.
+
+   *  Cache Expired (Code: 0x03): indicates the cache for the groups has
+      expired.
+
+   *  Delivery Timeout (Code: 0x04): indicates that the publisher was
+      not able to deliver groups within the delivery timeout.
+
+6.5.5.  INFO
 
    The INFO message contains the current information about a track.
    This is sent in response to a SUBSCRIBE or INFO_PLEASE message.
@@ -665,7 +758,7 @@ Table of Contents
    *Group Order*: The publisher's intended order of the groups within
    the subscription: none (0), ascending (1), or descending (2).
 
-6.11.  INFO_PLEASE
+6.5.6.  INFO_PLEASE
 
    The INFO_PLEASE message is used to request an INFO response.
 
@@ -674,7 +767,7 @@ Table of Contents
      [ Track Path Part (b) ]
    }
 
-6.12.  FETCH
+6.5.7.  FETCH
 
    A subscriber can request the transmission of a (partial) Group with a
    FETCH message.
@@ -685,6 +778,7 @@ Table of Contents
      Track Priority (i)
      Group Sequence (i)
      Frame Sequence (i)
+     Fetch Parameters (Parameter)
    }
 
    *Track Priority*: The priority of the group relative to all other
@@ -696,7 +790,9 @@ Table of Contents
    *Frame Sequence*: The starting frame number.  All frames from this
    point forward are transmitted.
 
-6.13.  FETCH_UPDATE
+   *Fetch Parameters*: The optional parameters.
+
+6.5.8.  FETCH_UPDATE
 
    A subscriber can modify a FETCH request with a FETCH_UPDATE message.
 
@@ -708,7 +804,7 @@ Table of Contents
    FETCH and SUBSCRIBE requests within the session.  The publisher
    should transmit _higher_ values first during congestion.
 
-6.14.  GROUP
+6.5.9.  GROUP
 
    The GROUP message contains information about a Group, as well as a
    reference to the subscription being served.
@@ -716,6 +812,7 @@ Table of Contents
    GROUP Message {
      Subscribe ID (i)
      Group Sequence (i)
+     Group Priority (i)
    }
 
    *Subscribe ID*: The corresponding Subscribe ID.  This ID is used to
@@ -723,7 +820,9 @@ Table of Contents
 
    *Group Sequence*: The sequence number of the group.
 
-6.15.  FRAME
+   *Group Priority*: The Priority of the group.
+
+6.5.10.  FRAME
 
    The FRAME message is a payload at a specific point of time.
 
@@ -739,11 +838,41 @@ Table of Contents
 
    Notable changes between versions of this draft.
 
-7.1.  moq-transfork-04
+7.1.  This fork
+
+7.1.1.  Changes from moq-transfork
+
+   *  Added Group Priority to GROUP message
+
+   *  Added New Session URI Paramerter to ANNOUNCE message
+
+   *  Added DELIVERY_TIMEOUT parameter
+
+   *  Renamed Group Start to Gap Min
+
+   *  Changed Group Count to Gap Max
+
+   *  Added datagram support
+
+   *  Added native QUIC support
+
+7.1.2.  Changes from moq-transport
+
+   *  Removed the GOAWAY message.
+
+   *  SESSION_UPDATE message is used to signal termination instead of
+      the GOAWAY message.
+
+   *  New Session URI is communicated as a parameter in ANNOUNCE message
+      instead of a field in GOAWAY message.
+
+   *  Relaxed the restrictions on updates for subscription.
+
+7.2.  moq-transfork-04
 
    *  Removed Group Expires.
 
-7.2.  moq-transfork-03
+7.3.  moq-transfork-03
 
    *  Broadcast and Track have been merged.
 
@@ -763,7 +892,7 @@ Table of Contents
 
    *  Moved the use-cases appendix to a separate document.
 
-7.3.  moq-transfork-02
+7.4.  moq-transfork-02
 
    *  Document version numbers.
 
@@ -771,7 +900,7 @@ Table of Contents
 
    *  Remove ROLE extension.
 
-7.4.  moq-transfork-01
+7.5.  moq-transfork-01
 
    *  Removed datagram support
 
@@ -787,7 +916,7 @@ Table of Contents
 
    Datagram and native QUIC support may be re-added in a future draft.
 
-7.5.  moq-transfork-00
+7.6.  moq-transfork-00
 
    Based on moq-transport-03.  The significant changes have been broken
    into sections.
@@ -865,8 +994,11 @@ Acknowledgments
 
    TODO acknowledge.
 
-Author's Address
+Authors' Addresses
 
    Luke Curley
    Discord
    Email: kixelated@gmail.com
+
+
+   Okutani Daichi

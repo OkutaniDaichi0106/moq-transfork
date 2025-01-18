@@ -29,7 +29,7 @@ Discussion Venues
    https://mailarchive.ietf.org/arch/browse/moq/.
 
    Source for this draft and an issue tracker can be found at
-   https://github.com/kixelated/moq-drafts.
+   https://github.com/OkutaniDaichi0106/moq-transfork.
 
 Status of This Memo
 
