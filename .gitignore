@@ -5,6 +5,7 @@
 *.txt
 *.upload
 *~
+.DS_Store
 .tags
 /*-[0-9][0-9].xml
 /.*.mk
@@ -18,6 +19,7 @@
 Gemfile.lock
 archive.json
 draft-lcurley-moq-transfork.xml
+draft-lcurley-moq-use-cases.xml
 package-lock.json
 report.xml
 !requirements.txt
